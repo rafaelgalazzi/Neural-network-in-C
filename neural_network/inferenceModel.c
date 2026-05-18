@@ -2,6 +2,7 @@
 #include <time.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "randomNumber.h"
 #include "inferenceModel.h"
 
@@ -45,7 +46,7 @@
 
 double activationFunction(double value)
 {
-    return 1.0f / (1.0f + expf(-value));
+    return 1.0f / (1.0f + exp(-value));
 }
 
 double activationDerivate(double value)
@@ -57,7 +58,7 @@ double activationDerivate(double value)
 // Create a neural network based on an integer array passed the first element will be the input, the last the output
 NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
 {
-    NeuralNetwork network;
+    NeuralNetwork network = {0};
     network.numberOfLayers = numberOfLayers;
     network.networkShape = networkShape;
 
@@ -73,8 +74,7 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
     if (!network.weights)
     {
         printf("Allocation memory fail");
-        free(network.weights);
-        return;
+        return network;
     }
 
     // Allocating memory for bias
@@ -88,22 +88,20 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
     if (!network.bias)
     {
         printf("Allocation memory fail");
-        free(network.bias);
-        return;
+        free(network.weights);
+        return network;
+    }
+
+    // Initializating values on bias
+    for (int i = 0; i < numberOfElementsWithBias; i++)
+    {
+        *(network.bias + i) = randomNumber(-10, 10);
     }
 
     // Initializating values on weights
-    int positionOnArray = 0;
-    for (int i = 0; i < numberOfLayers - 1; i++)
+    for (int i = 0; i < numberOfConnections; i++)
     {
-        for (int j = 0; j < *(networkShape + i); j++)
-        {
-            for (int k = 0; k < *(networkShape + i + 1); k++)
-            {
-                *(network.weights + positionOnArray) = randomNumber(-10, 10);
-                positionOnArray++;
-            }
-        }
+        *(network.weights + i) = randomNumber(-10, 10);
     }
 
     return network;
@@ -111,9 +109,20 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
 
 void forwardPass(NeuralNetwork *network, double *input, double *output)
 {
+    if (!network || !network->networkShape || !network->weights || !network->bias || !input || !output)
+    {
+        return;
+    }
+
     size_t numberOfInputElements = *(network->networkShape);
     size_t currentNumberofElementsInInput = numberOfInputElements;
     double *currentLayerElements = malloc(numberOfInputElements * sizeof(double));
+
+    if (!currentLayerElements)
+    {
+        printf("Allocation memory fail");
+        return;
+    }
 
     for (size_t i = 0; i < numberOfInputElements; i++)
     {
@@ -131,7 +140,7 @@ void forwardPass(NeuralNetwork *network, double *input, double *output)
         if (!nextLayerOutput)
         {
             printf("Allocation memory fail");
-            free(nextLayerOutput);
+            free(currentLayerElements);
             return;
         }
 
@@ -149,7 +158,15 @@ void forwardPass(NeuralNetwork *network, double *input, double *output)
             biasCount++;
         }
 
-        currentLayerElements = realloc(currentLayerElements, numberOfElementsNextLayer * sizeof(double));
+        double *resized = realloc(currentLayerElements, numberOfElementsNextLayer * sizeof(double));
+        if (!resized)
+        {
+            free(currentLayerElements);
+            free(nextLayerOutput);
+            return;
+        }
+
+        currentLayerElements = resized;
         currentNumberofElementsInInput = numberOfElementsNextLayer;
 
         for (size_t nextLayerInputElement = 0; nextLayerInputElement < numberOfElementsNextLayer; nextLayerInputElement++)
@@ -175,4 +192,12 @@ void backwardPass(NeuralNetwork *network, double *output)
 
 void trainModel(NeuralNetwork *network)
 {
+}
+
+void freeNeuralNetwork(NeuralNetwork *network)
+{
+    free(network->weights);
+    free(network->bias);
+    network->weights = NULL;
+    network->bias = NULL;
 }

@@ -1,5 +1,6 @@
 #ifndef INFERENCEMODEL_H
 #define INFERENCEMODEL_H
+#include <stddef.h>
 
 typedef struct
 {
@@ -28,5 +29,7 @@ void forwardPass(NeuralNetwork *network, double *input, double *output);
 void backwardPass(NeuralNetwork *network, double *output);
 
 void trainModel(NeuralNetwork *network);
+
+void freeNeuralNetwork(NeuralNetwork *network);
 
 #endif
