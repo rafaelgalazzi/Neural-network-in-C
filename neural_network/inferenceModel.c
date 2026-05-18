@@ -43,18 +43,18 @@
 
 // numero de inputs x numero de elementos proxima camada x camadas
 
-float activationFunction(float value)
+double activationFunction(double value)
 {
     return 1.0f / (1.0f + expf(-value));
 }
 
-float activationDerivate(float value)
+double activationDerivate(double value)
 {
-    float s = activationFunction(value);
+    double s = activationFunction(value);
     return s * (1 - s);
 }
 
-// Create a neural network based on An integer array passed the first element will be the input, the last the output
+// Create a neural network based on an integer array passed the first element will be the input, the last the output
 NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
 {
     NeuralNetwork network;
@@ -109,14 +109,22 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
     return network;
 }
 
-void forwardPass(NeuralNetwork network, double *input, size_t numberOfInputElements)
+void forwardPass(NeuralNetwork *network, double *input, double *output)
 {
+    size_t numberOfInputElements = *(network->networkShape);
+    size_t currentNumberofElementsInInput = numberOfInputElements;
+    double *currentLayerElements = malloc(numberOfInputElements * sizeof(double));
 
-    size_t currentInputElementNumbers = numberOfInputElements;
-
-    for (size_t i = 0; i < network.numberOfLayers - 1; i++)
+    for (size_t i = 0; i < numberOfInputElements; i++)
     {
-        int numberOfElementsNextLayer = *(network.networkShape + i + 1);
+        *(currentLayerElements + i) = *(input + i);
+    }
+
+    size_t weightCount = 0;
+    size_t biasCount = 0;
+    for (size_t i = 0; i < network->numberOfLayers - 1; i++)
+    {
+        size_t numberOfElementsNextLayer = *(network->networkShape + i + 1);
 
         double *nextLayerOutput = (double *)malloc(numberOfElementsNextLayer * sizeof(double));
 
@@ -127,16 +135,44 @@ void forwardPass(NeuralNetwork network, double *input, size_t numberOfInputEleme
             return;
         }
 
-        for (size_t inputElement = 0; inputElement < currentInputElementNumbers; inputElement++) {
-            
+        // Wi(Current weight matrix) X Ii(Current input matrix) + Bias(Current Bias)
+        for (size_t nextLayerInputElement = 0; nextLayerInputElement < numberOfElementsNextLayer; nextLayerInputElement++)
+        {
+            double lineSum = 0;
+            for (size_t inputElement = 0; inputElement < currentNumberofElementsInInput; inputElement++)
+            {
+                lineSum += *(network->weights + weightCount) * (*(currentLayerElements + inputElement));
+                weightCount++;
+            }
+
+            *(nextLayerOutput + nextLayerInputElement) = activationFunction(lineSum + *(network->bias + biasCount));
+            biasCount++;
         }
+
+        currentLayerElements = realloc(currentLayerElements, numberOfElementsNextLayer * sizeof(double));
+        currentNumberofElementsInInput = numberOfElementsNextLayer;
+
+        for (size_t nextLayerInputElement = 0; nextLayerInputElement < numberOfElementsNextLayer; nextLayerInputElement++)
+        {
+            *(currentLayerElements + nextLayerInputElement) = *(nextLayerOutput + nextLayerInputElement);
+        }
+
+        free(nextLayerOutput);
     }
+
+    size_t numberOfOutputElements = *(network->networkShape + network->numberOfLayers - 1);
+    for (size_t i = 0; i < numberOfOutputElements; i++)
+    {
+        *(output + i) = *(currentLayerElements + i);
+    }
+
+    free(currentLayerElements);
 }
 
-void backwardPass(NeuralNetwork network, double *output, size_t numberOfOutputElements)
+void backwardPass(NeuralNetwork *network, double *output)
 {
 }
 
-void trainModel(NeuralNetwork network)
+void trainModel(NeuralNetwork *network)
 {
 }

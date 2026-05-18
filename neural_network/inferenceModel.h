@@ -16,18 +16,17 @@ typedef struct
     int numberOfLayers;
 } NeuralNetwork;
 
-float activationFunction(float value);
-float activationDerivate(float value);
+double activationFunction(double value);
+double activationDerivate(double value);
 
 NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers);
 
 // forwardPass responsable for making the inference
-void forwardPass(NeuralNetwork network, double *input, size_t numberOfElements);
+void forwardPass(NeuralNetwork *network, double *input, double *output);
 
 // backwardPass(backpropagation) responsable for training the model by adjusting the weights
-void backwardPass(NeuralNetwork network, double *output, size_t numberOfOutputElements);
+void backwardPass(NeuralNetwork *network, double *output);
 
-
-void trainModel(NeuralNetwork network);
+void trainModel(NeuralNetwork *network);
 
 #endif
