@@ -26,7 +26,7 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers);
 void forwardPass(NeuralNetwork *network, double *input, double *output);
 
 // backwardPass(backpropagation) responsable for training the model by adjusting the weights
-void backwardPass(NeuralNetwork *network, double *output);
+void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput);
 
 void trainModel(NeuralNetwork *network);
 

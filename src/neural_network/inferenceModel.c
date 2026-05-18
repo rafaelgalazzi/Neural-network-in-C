@@ -3,8 +3,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "randomNumber.h"
-#include "inferenceModel.h"
+#include "random_number_generator/randomNumber.h"
+#include "neural_network/inferenceModel.h"
 
 /*
     Uma rede neural pode ser construidas fazendo a definição do problema e como deve ser a resposta esperada
@@ -186,8 +186,9 @@ void forwardPass(NeuralNetwork *network, double *input, double *output)
     free(currentLayerElements);
 }
 
-void backwardPass(NeuralNetwork *network, double *output)
+void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput)
 {
+    
 }
 
 void trainModel(NeuralNetwork *network)
