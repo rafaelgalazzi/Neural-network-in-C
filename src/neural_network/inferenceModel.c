@@ -34,11 +34,7 @@
 
     Pesos Wout = 10 x 9 = 90
 
-
-
     Saida = AtOut(Wout X OutputW3 + BiosOut);
-
-
 
 */
 
@@ -107,9 +103,9 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
     return network;
 }
 
-void forwardPass(NeuralNetwork *network, double *input, double *output)
+void forwardPass(NeuralNetwork *network, double *input, double *output, double *allNeuronValues)
 {
-    if (!network || !network->networkShape || !network->weights || !network->bias || !input || !output)
+    if (!network || !network->networkShape || !network->weights || !network->bias || !input || !output || !allNeuronValues)
     {
         return;
     }
@@ -123,10 +119,12 @@ void forwardPass(NeuralNetwork *network, double *input, double *output)
         printf("Allocation memory fail");
         return;
     }
-
+    size_t neuronCount = 0;
     for (size_t i = 0; i < numberOfInputElements; i++)
     {
         *(currentLayerElements + i) = *(input + i);
+        *(allNeuronValues + neuronCount) = *(input + i);
+        neuronCount++;
     }
 
     size_t weightCount = 0;
@@ -172,6 +170,8 @@ void forwardPass(NeuralNetwork *network, double *input, double *output)
         for (size_t nextLayerInputElement = 0; nextLayerInputElement < numberOfElementsNextLayer; nextLayerInputElement++)
         {
             *(currentLayerElements + nextLayerInputElement) = *(nextLayerOutput + nextLayerInputElement);
+            *(allNeuronValues + neuronCount) = *(nextLayerOutput + nextLayerInputElement);
+            neuronCount++;
         }
 
         free(nextLayerOutput);
@@ -186,8 +186,9 @@ void forwardPass(NeuralNetwork *network, double *input, double *output)
     free(currentLayerElements);
 }
 
-void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput)
+void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput, double *allNeuronValues)
 {
+
     
 }
 

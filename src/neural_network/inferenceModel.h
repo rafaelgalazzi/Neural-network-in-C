@@ -23,10 +23,10 @@ double activationDerivate(double value);
 NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers);
 
 // forwardPass responsable for making the inference
-void forwardPass(NeuralNetwork *network, double *input, double *output);
+void forwardPass(NeuralNetwork *network, double *input, double *output, double *allNeuronValues);
 
 // backwardPass(backpropagation) responsable for training the model by adjusting the weights
-void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput);
+void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput, double *allNeuronValues);
 
 void trainModel(NeuralNetwork *network);
 
