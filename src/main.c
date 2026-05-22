@@ -33,7 +33,7 @@ int main()
 
     size_t numberOfSamples = 4;
     size_t epochs = 500000;
-    double learningRate = 0.01;
+    double learningRate = 0.1;
 
     trainModel(&network, trainingInputs, targetOutputs, numberOfSamples, epochs, learningRate);
 
