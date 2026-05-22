@@ -106,7 +106,7 @@ size_t biasLayerOffset(NeuralNetwork *network, size_t layer)
 }
 
 // Create a neural network based on an integer array passed the first element will be the input, the last the output
-NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers)
+NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers, double inputRange)
 {
     NeuralNetwork network = {0};
     network.numberOfLayers = numberOfLayers;
@@ -145,13 +145,13 @@ NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers)
     // Initializating values on bias
     for (size_t i = 0; i < numberOfElementsWithBias; i++)
     {
-        *(network.bias + i) = randomNumber(-1, 1);
+        *(network.bias + i) = randomNumber(-inputRange, inputRange);
     }
 
     // Initializating values on weights
     for (size_t i = 0; i < numberOfConnections; i++)
     {
-        *(network.weights + i) = randomNumber(-1, 1);
+        *(network.weights + i) = randomNumber(-inputRange, inputRange);
     }
 
     return network;

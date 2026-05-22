@@ -5,29 +5,15 @@
 // compile with
 // gcc src\main.c src\neural_network\inferenceModel.c src\random_number_generator\randomNumber.c -I src -o xor_demo.exe
 
-static void configureXorGate(NeuralNetwork *network)
-{
-    /* Hidden neurons: OR and NAND. Output neuron: AND. */
-    network->weights[0] = 20.0;
-    network->weights[1] = 20.0;
-    network->weights[2] = -20.0;
-    network->weights[3] = -20.0;
-    network->weights[4] = 20.0;
-    network->weights[5] = 20.0;
-
-    network->bias[0] = -10.0;
-    network->bias[1] = 30.0;
-    network->bias[2] = -30.0;
-}
-
 int main()
 {
-    size_t networkShape[] = {2, 2, 1};
+    size_t networkShape[] = {2, 8, 1};
     size_t numberOfLayers = sizeof(networkShape) / sizeof(networkShape[0]);
     size_t inputSize = networkShape[0];
     size_t outputSize = networkShape[numberOfLayers - 1];
 
-    NeuralNetwork network = createNeuralNetwork(networkShape, numberOfLayers);
+    double inputRange = 0.5;
+    NeuralNetwork network = createNeuralNetwork(networkShape, numberOfLayers, inputRange);
     if (!network.weights || !network.bias)
     {
         return 1;
@@ -46,7 +32,10 @@ int main()
         0.0};
 
     size_t numberOfSamples = 4;
-    configureXorGate(&network);
+    size_t epochs = 500000;
+    double learningRate = 0.01;
+
+    trainModel(&network, trainingInputs, targetOutputs, numberOfSamples, epochs, learningRate);
 
     size_t totalNeurons = countTotalNeurons(&network);
     if (!totalNeurons)
@@ -71,7 +60,7 @@ int main()
         return 1;
     }
 
-    printf("XOR gate predictions:\n");
+    printf("XOR predictions after training:\n");
 
     for (size_t sample = 0; sample < numberOfSamples; sample++)
     {

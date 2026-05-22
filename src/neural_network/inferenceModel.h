@@ -22,7 +22,7 @@ double activationDerivate(double value);
 
 size_t countTotalNeurons(NeuralNetwork *network);
 
-NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers);
+NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers, double inputRange);
 
 // forwardPass responsable for making the inference
 void forwardPass(NeuralNetwork *network, double *input, double *output, double *allNeuronValues);

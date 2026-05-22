@@ -16,10 +16,17 @@ uint32_t generateSeedRNG()
 
 uint32_t xorshift32(void)
 {
-    uint32_t x = generateSeedRNG();
+    static uint32_t x = 0;
+
+    if (x == 0)
+    {
+        x = generateSeedRNG();
+    }
+
     x ^= x << 13;
     x ^= x >> 17;
     x ^= x << 5;
+
     return x;
 }
 
