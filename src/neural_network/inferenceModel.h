@@ -10,17 +10,17 @@ typedef struct
     double *bias;
     // Bias for each layer, will be added with the input for the next layer and passed inside the non linear function
 
-    int *networkShape;
+    size_t *networkShape;
     // each element represent the number of neurons of each layer including input and output
     // size: numberOfLayers
 
-    int numberOfLayers;
+    size_t numberOfLayers;
 } NeuralNetwork;
 
 double activationFunction(double value);
 double activationDerivate(double value);
 
-NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers);
+NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers);
 
 // forwardPass responsable for making the inference
 void forwardPass(NeuralNetwork *network, double *input, double *output, double *allNeuronValues);

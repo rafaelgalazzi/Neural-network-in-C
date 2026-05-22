@@ -40,15 +40,14 @@
 
 // numero de inputs x numero de elementos proxima camada x camadas
 
-double activationFunction(double value)
+double activationFunction(double preActivationValue)
 {
-    return 1.0f / (1.0f + exp(-value));
+    return 1.0f / (1.0f + exp(-preActivationValue));
 }
 
-double activationDerivate(double value)
+double activationDerivate(double output)
 {
-    double s = activationFunction(value);
-    return s * (1 - s);
+    return output * (1 - output);
 }
 
 double calculateLoss(double output, double expected)
@@ -63,15 +62,15 @@ double calculateDerivateLoss(double output, double expected)
 }
 
 // Create a neural network based on an integer array passed the first element will be the input, the last the output
-NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
+NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers)
 {
     NeuralNetwork network = {0};
     network.numberOfLayers = numberOfLayers;
     network.networkShape = networkShape;
 
     // Allocating memory for weights
-    int numberOfConnections = 0;
-    for (int i = 0; i < numberOfLayers - 1; i++)
+    size_t numberOfConnections = 0;
+    for (size_t i = 0; i < numberOfLayers - 1; i++)
     {
         numberOfConnections += *(networkShape + i) * (*(networkShape + i + 1));
     }
@@ -85,8 +84,8 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
     }
 
     // Allocating memory for bias
-    int numberOfElementsWithBias = 0;
-    for (int i = 0; i < numberOfLayers - 1; i++)
+    size_t numberOfElementsWithBias = 0;
+    for (size_t i = 0; i < numberOfLayers - 1; i++)
     {
         numberOfElementsWithBias += *(networkShape + i + 1);
     }
@@ -100,13 +99,13 @@ NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
     }
 
     // Initializating values on bias
-    for (int i = 0; i < numberOfElementsWithBias; i++)
+    for (size_t i = 0; i < numberOfElementsWithBias; i++)
     {
         *(network.bias + i) = randomNumber(-10, 10);
     }
 
     // Initializating values on weights
-    for (int i = 0; i < numberOfConnections; i++)
+    for (size_t i = 0; i < numberOfConnections; i++)
     {
         *(network.weights + i) = randomNumber(-10, 10);
     }
@@ -197,21 +196,53 @@ void forwardPass(NeuralNetwork *network, double *input, double *output, double *
     free(currentLayerElements);
 }
 
+// ∂L/∂w = ∂L/∂a * ∂a/∂z * ∂z/∂w
+// w (new) = w(old) - n * ∂L/∂w
 void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput, double *allNeuronValues)
 {
     double totalLoss = 0;
     size_t numberOfOutputElements = *(network->networkShape + network->numberOfLayers - 1);
-    for (int i = 0; i < numberOfOutputElements; i++)
+    for (size_t i = 0; i < numberOfOutputElements; i++)
     {
         double outputValue = *(output + i);
         double targetOutputValue = *(targetOutput + i);
         totalLoss += calculateLoss(outputValue, targetOutputValue);
     }
 
-    
+    // calculate the delta for every neuron
+    size_t numberOfNeuronsToCalculateDelta = 0;
+    for (size_t i = 1; i < network->numberOfLayers - 1; i++)
+    {
+        numberOfNeuronsToCalculateDelta += *(network->networkShape + i);
+    }
 
+    // output delta calculateDerivateLoss * activationDerivate
+    double *outputDeltas = malloc(numberOfOutputElements * sizeof(double));
+    if (!outputDeltas)
+    {
+        printf("Allocation memory for outputDeltas fail");
+        return;
+    }
 
+    for (size_t i = 0; i < numberOfOutputElements; i++)
+    {
+        double outputValue = *(output + i);
+        double targetOutputValue = *(targetOutput + i);
+        *(outputDeltas + i) = calculateDerivateLoss(outputValue, targetOutputValue) * activationDerivate(outputValue);
+    }
 
+    double *hiddenDeltas = malloc(numberOfNeuronsToCalculateDelta * sizeof(double));
+    // calculate deltas for hidden layers neurons
+    for (size_t layer = network->numberOfLayers - 2; layer >= 1; layer--)
+    {
+        size_t numberOfElementsOnLayer = *(network->networkShape + layer);
+        for (size_t i = numberOfElementsOnLayer; i > 0; i--)
+        {
+            
+        }
+    }
+
+    free(outputDeltas);
 }
 
 void trainModel(NeuralNetwork *network)
