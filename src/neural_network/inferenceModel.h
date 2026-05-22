@@ -20,6 +20,8 @@ typedef struct
 double activationFunction(double value);
 double activationDerivate(double value);
 
+size_t countTotalNeurons(NeuralNetwork *network);
+
 NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers);
 
 // forwardPass responsable for making the inference

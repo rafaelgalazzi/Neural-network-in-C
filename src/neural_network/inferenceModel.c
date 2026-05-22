@@ -119,7 +119,7 @@ NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers)
         numberOfConnections += *(networkShape + i) * (*(networkShape + i + 1));
     }
 
-    network.weights = malloc(numberOfConnections * sizeof(double));
+    network.weights = (double *)malloc(numberOfConnections * sizeof(double));
 
     if (!network.weights)
     {
@@ -134,7 +134,7 @@ NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers)
         numberOfElementsWithBias += *(networkShape + i + 1);
     }
 
-    network.bias = malloc(numberOfElementsWithBias * sizeof(double));
+    network.bias = (double *)malloc(numberOfElementsWithBias * sizeof(double));
     if (!network.bias)
     {
         printf("Allocation memory fail");
@@ -145,13 +145,13 @@ NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers)
     // Initializating values on bias
     for (size_t i = 0; i < numberOfElementsWithBias; i++)
     {
-        *(network.bias + i) = randomNumber(-10, 10);
+        *(network.bias + i) = randomNumber(-1, 1);
     }
 
     // Initializating values on weights
     for (size_t i = 0; i < numberOfConnections; i++)
     {
-        *(network.weights + i) = randomNumber(-10, 10);
+        *(network.weights + i) = randomNumber(-1, 1);
     }
 
     return network;
@@ -166,7 +166,7 @@ void forwardPass(NeuralNetwork *network, double *input, double *output, double *
 
     size_t numberOfInputElements = *(network->networkShape);
     size_t currentNumberofElementsInInput = numberOfInputElements;
-    double *currentLayerElements = malloc(numberOfInputElements * sizeof(double));
+    double *currentLayerElements = (double *)malloc(numberOfInputElements * sizeof(double));
 
     if (!currentLayerElements)
     {
@@ -210,7 +210,7 @@ void forwardPass(NeuralNetwork *network, double *input, double *output, double *
             biasCount++;
         }
 
-        double *resized = realloc(currentLayerElements, numberOfElementsNextLayer * sizeof(double));
+        double *resized = (double *)realloc(currentLayerElements, numberOfElementsNextLayer * sizeof(double));
         if (!resized)
         {
             free(currentLayerElements);
@@ -270,7 +270,7 @@ void backwardPass(NeuralNetwork *network, double *input, double *output, double 
 
     // Store the delta of every neuron using the same layer order used by allNeuronValues
     size_t totalNeurons = countTotalNeurons(network);
-    double *deltas = malloc(totalNeurons * sizeof(double));
+    double *deltas = (double *)malloc(totalNeurons * sizeof(double));
     if (!deltas)
     {
         printf("Allocation memory for deltas fail");
@@ -284,7 +284,7 @@ void backwardPass(NeuralNetwork *network, double *input, double *output, double 
 
     // output delta calculateDerivateLoss * activationDerivate
     // The output layer delta starts the chain rule because it compares prediction with target
-    double *outputDeltas = malloc(numberOfOutputElements * sizeof(double));
+    double *outputDeltas = (double *)malloc(numberOfOutputElements * sizeof(double));
     if (!outputDeltas)
     {
         printf("Allocation memory for outputDeltas fail");
@@ -301,7 +301,7 @@ void backwardPass(NeuralNetwork *network, double *input, double *output, double 
         *(deltas + outputLayerOffset + i) = *(outputDeltas + i);
     }
 
-    double *hiddenDeltas = malloc(numberOfNeuronsToCalculateDelta * sizeof(double));
+    double *hiddenDeltas = (double *)malloc(numberOfNeuronsToCalculateDelta * sizeof(double));
     if (!hiddenDeltas)
     {
         printf("Allocation memory for hiddenDeltas fail");
