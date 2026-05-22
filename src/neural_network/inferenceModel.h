@@ -22,6 +22,10 @@ double activationDerivate(double value);
 
 size_t countTotalNeurons(NeuralNetwork *network);
 
+size_t countTotalWeights(NeuralNetwork *network);
+
+size_t countTotalBias(NeuralNetwork *network);
+
 NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers, double inputRange);
 
 // forwardPass responsable for making the inference
@@ -35,6 +39,10 @@ double calculateLoss(double output, double expected);
 double calculateDerivateLoss(double output, double expected);
 
 void trainModel(NeuralNetwork *network, double *trainingInputs, double *targetOutputs, size_t numberOfSamples, size_t epochs, double learningRate);
+
+void saveModel(NeuralNetwork *network, char *modelName);
+
+void loadModel(NeuralNetwork *network, char *modelName);
 
 void freeNeuralNetwork(NeuralNetwork *network);
 

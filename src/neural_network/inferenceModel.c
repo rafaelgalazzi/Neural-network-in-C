@@ -61,6 +61,30 @@ double calculateDerivateLoss(double output, double expected)
     return output - expected;
 }
 
+size_t countTotalWeights(NeuralNetwork *network)
+{
+    size_t totalWeights = 0;
+    for (size_t i = 0; i < network->numberOfLayers - 1; i++)
+    {
+        size_t neuronsInCurrentLayer = *(network->networkShape + i);
+        size_t neuronsInNextLayer = *(network->networkShape + i + 1);
+        totalWeights += neuronsInCurrentLayer * neuronsInNextLayer;
+    }
+
+    return totalWeights;
+}
+
+size_t countTotalBias(NeuralNetwork *network)
+{
+    size_t totalNeurons = 0;
+    for (size_t i = 1; i < network->numberOfLayers; i++)
+    {
+        totalNeurons += *(network->networkShape + i);
+    }
+
+    return totalNeurons;
+}
+
 size_t countTotalNeurons(NeuralNetwork *network)
 {
     size_t totalNeurons = 0;
@@ -103,6 +127,131 @@ size_t biasLayerOffset(NeuralNetwork *network, size_t layer)
     }
 
     return offset;
+}
+
+void saveModel(NeuralNetwork *network, char *modelName)
+{
+    if (!network || !network->networkShape || !network->weights || !network->bias || !modelName)
+    {
+        return;
+    }
+
+    FILE *model = fopen(modelName, "w");
+    if (!model)
+    {
+        printf("Fail while opening the file %s", modelName);
+        return;
+    }
+
+    size_t amountOfWeights = countTotalWeights(network);
+    size_t amountOfBias = countTotalBias(network);
+
+    fprintf(model, "Number of layers\n");
+
+    fprintf(model, "%zu\n", network->numberOfLayers);
+
+    fprintf(model, "Network Shape\n");
+
+    for (size_t i = 0; i < network->numberOfLayers; i++)
+    {
+        fprintf(model, "%zu\n", *(network->networkShape + i));
+    }
+
+    fprintf(model, "Weights\n");
+
+    for (size_t i = 0; i < amountOfWeights; i++)
+    {
+        fprintf(model, "%.17g\n", *(network->weights + i));
+    }
+
+    fprintf(model, "Bias\n");
+
+    for (size_t i = 0; i < amountOfBias; i++)
+    {
+        fprintf(model, "%.17g\n", *(network->bias + i));
+    }
+
+    if (fclose(model) != 0)
+    {
+        printf("Error while closing file!");
+        return;
+    }
+}
+
+void loadModel(NeuralNetwork *network, char *modelName)
+{
+    if (!network || !network->networkShape || !network->weights || !network->bias || !modelName)
+    {
+        return;
+    }
+
+    FILE *model = fopen(modelName, "r");
+
+    if (!model)
+    {
+        printf("Error while opening file %s", modelName);
+        return;
+    }
+
+    size_t numberOfLayers = 0;
+    if (fscanf(model, "Number of layers %zu Network Shape", &numberOfLayers) != 1)
+    {
+        printf("Error while reading number of layers");
+        fclose(model);
+        return;
+    }
+
+    if (numberOfLayers != network->numberOfLayers)
+    {
+        printf("Model layer count does not match the current network");
+        fclose(model);
+        return;
+    }
+
+    for (size_t i = 0; i < numberOfLayers; i++)
+    {
+        size_t shapeElement = 0;
+        if (fscanf(model, "%zu", &shapeElement) != 1)
+        {
+            printf("Error while reading network shape");
+            fclose(model);
+            return;
+        }
+
+        if (shapeElement != *(network->networkShape + i))
+        {
+            printf("Model shape does not match the current network");
+            fclose(model);
+            return;
+        }
+    }
+
+    size_t amountOfWeights = countTotalWeights(network);
+    size_t amountOfBias = countTotalBias(network);
+
+    fscanf(model, " Weights");
+    for (size_t i = 0; i < amountOfWeights; i++)
+    {
+        if (fscanf(model, "%lf", network->weights + i) != 1)
+        {
+            printf("Error while reading weights");
+            fclose(model);
+            return;
+        }
+    }
+
+    fscanf(model, " Bias");
+    for (size_t i = 0; i < amountOfBias; i++)
+    {
+        if (fscanf(model, "%lf", network->bias + i) != 1)
+        {
+            printf("Error while reading bias");
+            fclose(model);
+            return;
+        }
+    }
+
+    fclose(model);
 }
 
 // Create a neural network based on an integer array passed the first element will be the input, the last the output

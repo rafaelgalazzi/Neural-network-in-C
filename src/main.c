@@ -7,7 +7,7 @@
 
 int main()
 {
-    size_t networkShape[] = {2, 8, 1};
+    size_t networkShape[] = {2, 8, 20, 1};
     size_t numberOfLayers = sizeof(networkShape) / sizeof(networkShape[0]);
     size_t inputSize = networkShape[0];
     size_t outputSize = networkShape[numberOfLayers - 1];
@@ -32,10 +32,14 @@ int main()
         0.0};
 
     size_t numberOfSamples = 4;
-    size_t epochs = 500000;
+    size_t epochs = 50000;
     double learningRate = 0.1;
 
+    // loadModel(&network, "model.txt");
+
     trainModel(&network, trainingInputs, targetOutputs, numberOfSamples, epochs, learningRate);
+
+    saveModel(&network, "model.txt");
 
     size_t totalNeurons = countTotalNeurons(&network);
     if (!totalNeurons)
