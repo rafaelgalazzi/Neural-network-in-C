@@ -28,6 +28,10 @@ void forwardPass(NeuralNetwork *network, double *input, double *output, double *
 // backwardPass(backpropagation) responsable for training the model by adjusting the weights
 void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput, double *allNeuronValues);
 
+double calculateLoss(double output, double expected);
+
+double calculateDerivateLoss(double output, double expected);
+
 void trainModel(NeuralNetwork *network);
 
 void freeNeuralNetwork(NeuralNetwork *network);

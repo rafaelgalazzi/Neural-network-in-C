@@ -51,6 +51,17 @@ double activationDerivate(double value)
     return s * (1 - s);
 }
 
+double calculateLoss(double output, double expected)
+{
+    double error = output - expected;
+    return error * error / 2.0;
+}
+
+double calculateDerivateLoss(double output, double expected)
+{
+    return output - expected;
+}
+
 // Create a neural network based on an integer array passed the first element will be the input, the last the output
 NeuralNetwork createNeuralNetwork(int *networkShape, size_t numberOfLayers)
 {
@@ -188,8 +199,19 @@ void forwardPass(NeuralNetwork *network, double *input, double *output, double *
 
 void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput, double *allNeuronValues)
 {
+    double totalLoss = 0;
+    size_t numberOfOutputElements = *(network->networkShape + network->numberOfLayers - 1);
+    for (int i = 0; i < numberOfOutputElements; i++)
+    {
+        double outputValue = *(output + i);
+        double targetOutputValue = *(targetOutput + i);
+        totalLoss += calculateLoss(outputValue, targetOutputValue);
+    }
 
     
+
+
+
 }
 
 void trainModel(NeuralNetwork *network)
