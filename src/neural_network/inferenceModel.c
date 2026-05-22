@@ -6,38 +6,6 @@
 #include "random_number_generator/randomNumber.h"
 #include "neural_network/inferenceModel.h"
 
-/*
-    Uma rede neural pode ser construidas fazendo a definição do problema e como deve ser a resposta esperada
-    No caso abaixo inserimos o tabuleiro com a condição atual e de que é o turno e a resposta é um vetor que representa a mesa
-    e a proxima jogada é o elemento com maior probabilidade.
-
-
-    Input = {-1, 0, 0, 1, -1, 0, 0, 0, 1, 1}
-
-    Hidden Layers = 3 x 10 (3 camadas de 10, é arbitrária mas seu tamanho depende do problema)
-
-    Output = {0, 0 , 0.95, 0, 0, 0, 0, 0, 0}
-
-    Output = Ativação()
-
-    In => H1 => H2 => H3 => Out
-
-    Cada Input tem uma ligação com cada neurônio da proxima camada, ligados pela matriz de pesos;
-
-
-    Numero de pesos na W1 = Quantidade de Inputs X Quantidade de neuronios na cama oculta 1
-    W1 = 10 x 10 = 100
-
-    Pesos W2 = 10 x 10 = 100
-
-    Pesos W3 = 10 x 10 = 100
-
-    Pesos Wout = 10 x 9 = 90
-
-    Saida = AtOut(Wout X OutputW3 + BiosOut);
-
-*/
-
 // numero de inputs x numero de elementos proxima camada x camadas
 
 double activationFunction(double preActivationValue)
