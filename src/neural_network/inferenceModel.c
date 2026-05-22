@@ -61,6 +61,50 @@ double calculateDerivateLoss(double output, double expected)
     return output - expected;
 }
 
+size_t countTotalNeurons(NeuralNetwork *network)
+{
+    size_t totalNeurons = 0;
+    for (size_t i = 0; i < network->numberOfLayers; i++)
+    {
+        totalNeurons += *(network->networkShape + i);
+    }
+
+    return totalNeurons;
+}
+
+size_t neuronLayerOffset(NeuralNetwork *network, size_t layer)
+{
+    size_t offset = 0;
+    for (size_t i = 0; i < layer; i++)
+    {
+        offset += *(network->networkShape + i);
+    }
+
+    return offset;
+}
+
+size_t weightLayerOffset(NeuralNetwork *network, size_t layer)
+{
+    size_t offset = 0;
+    for (size_t i = 0; i < layer; i++)
+    {
+        offset += *(network->networkShape + i) * (*(network->networkShape + i + 1));
+    }
+
+    return offset;
+}
+
+size_t biasLayerOffset(NeuralNetwork *network, size_t layer)
+{
+    size_t offset = 0;
+    for (size_t i = 0; i < layer; i++)
+    {
+        offset += *(network->networkShape + i + 1);
+    }
+
+    return offset;
+}
+
 // Create a neural network based on an integer array passed the first element will be the input, the last the output
 NeuralNetwork createNeuralNetwork(size_t *networkShape, size_t numberOfLayers)
 {
@@ -198,8 +242,15 @@ void forwardPass(NeuralNetwork *network, double *input, double *output, double *
 
 // ∂L/∂w = ∂L/∂a * ∂a/∂z * ∂z/∂w
 // w (new) = w(old) - n * ∂L/∂w
-void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput, double *allNeuronValues)
+void backwardPass(NeuralNetwork *network, double *input, double *output, double *targetOutput, double *allNeuronValues, double learningRate)
 {
+    // Validate the pointers used by backpropagation before calculating gradients
+    if (!network || !network->networkShape || !network->weights || !network->bias || !input || !output || !targetOutput || !allNeuronValues)
+    {
+        return;
+    }
+
+    // Calculate the loss to know how far the current prediction is from the expected output
     double totalLoss = 0;
     size_t numberOfOutputElements = *(network->networkShape + network->numberOfLayers - 1);
     for (size_t i = 0; i < numberOfOutputElements; i++)
@@ -210,43 +261,169 @@ void backwardPass(NeuralNetwork *network, double *input, double *output, double 
     }
 
     // calculate the delta for every neuron
+    // Deltas represent how much each neuron contributed to the final error
     size_t numberOfNeuronsToCalculateDelta = 0;
-    for (size_t i = 1; i < network->numberOfLayers - 1; i++)
+    for (size_t i = 1; i < network->numberOfLayers; i++)
     {
         numberOfNeuronsToCalculateDelta += *(network->networkShape + i);
     }
 
+    // Store the delta of every neuron using the same layer order used by allNeuronValues
+    size_t totalNeurons = countTotalNeurons(network);
+    double *deltas = malloc(totalNeurons * sizeof(double));
+    if (!deltas)
+    {
+        printf("Allocation memory for deltas fail");
+        return;
+    }
+
+    for (size_t i = 0; i < totalNeurons; i++)
+    {
+        *(deltas + i) = 0;
+    }
+
     // output delta calculateDerivateLoss * activationDerivate
+    // The output layer delta starts the chain rule because it compares prediction with target
     double *outputDeltas = malloc(numberOfOutputElements * sizeof(double));
     if (!outputDeltas)
     {
         printf("Allocation memory for outputDeltas fail");
+        free(deltas);
         return;
     }
 
+    size_t outputLayerOffset = neuronLayerOffset(network, network->numberOfLayers - 1);
     for (size_t i = 0; i < numberOfOutputElements; i++)
     {
         double outputValue = *(output + i);
         double targetOutputValue = *(targetOutput + i);
         *(outputDeltas + i) = calculateDerivateLoss(outputValue, targetOutputValue) * activationDerivate(outputValue);
+        *(deltas + outputLayerOffset + i) = *(outputDeltas + i);
     }
 
     double *hiddenDeltas = malloc(numberOfNeuronsToCalculateDelta * sizeof(double));
+    if (!hiddenDeltas)
+    {
+        printf("Allocation memory for hiddenDeltas fail");
+        free(outputDeltas);
+        free(deltas);
+        return;
+    }
+
+    for (size_t i = 0; i < numberOfNeuronsToCalculateDelta; i++)
+    {
+        *(hiddenDeltas + i) = 0;
+    }
+
     // calculate deltas for hidden layers neurons
-    for (size_t layer = network->numberOfLayers - 2; layer >= 1; layer--)
+    // Hidden deltas are calculated backwards using the next layer deltas and the connecting weights
+    for (size_t layer = network->numberOfLayers - 2; layer > 0; layer--)
     {
         size_t numberOfElementsOnLayer = *(network->networkShape + layer);
-        for (size_t i = numberOfElementsOnLayer; i > 0; i--)
+        size_t numberOfElementsOnNextLayer = *(network->networkShape + layer + 1);
+        size_t currentLayerOffset = neuronLayerOffset(network, layer);
+        size_t nextLayerOffset = neuronLayerOffset(network, layer + 1);
+        size_t currentWeightLayerOffset = weightLayerOffset(network, layer);
+
+        for (size_t currentNeuron = 0; currentNeuron < numberOfElementsOnLayer; currentNeuron++)
         {
-            
+            double nextLayerDeltasSum = 0;
+            for (size_t nextNeuron = 0; nextNeuron < numberOfElementsOnNextLayer; nextNeuron++)
+            {
+                size_t weightIndex = currentWeightLayerOffset + (nextNeuron * numberOfElementsOnLayer) + currentNeuron;
+                nextLayerDeltasSum += *(network->weights + weightIndex) * (*(deltas + nextLayerOffset + nextNeuron));
+            }
+
+            *(deltas + currentLayerOffset + currentNeuron) = nextLayerDeltasSum * activationDerivate(*(allNeuronValues + currentLayerOffset + currentNeuron));
         }
     }
 
+    // Keep a compact hiddenDeltas array with all non-input neuron deltas
+    for (size_t i = 0; i < numberOfNeuronsToCalculateDelta; i++)
+    {
+        *(hiddenDeltas + i) = *(deltas + *(network->networkShape) + i);
+    }
+
+    // Apply gradient descent to every weight and bias after all deltas were calculated
+    for (size_t layer = 0; layer < network->numberOfLayers - 1; layer++)
+    {
+        size_t numberOfElementsOnLayer = *(network->networkShape + layer);
+        size_t numberOfElementsOnNextLayer = *(network->networkShape + layer + 1);
+        size_t currentLayerOffset = neuronLayerOffset(network, layer);
+        size_t nextLayerOffset = neuronLayerOffset(network, layer + 1);
+        size_t currentWeightLayerOffset = weightLayerOffset(network, layer);
+        size_t currentBiasLayerOffset = biasLayerOffset(network, layer);
+
+        for (size_t nextNeuron = 0; nextNeuron < numberOfElementsOnNextLayer; nextNeuron++)
+        {
+            double delta = *(deltas + nextLayerOffset + nextNeuron);
+            for (size_t currentNeuron = 0; currentNeuron < numberOfElementsOnLayer; currentNeuron++)
+            {
+                // Weight gradient = next neuron delta * current neuron activation
+                size_t weightIndex = currentWeightLayerOffset + (nextNeuron * numberOfElementsOnLayer) + currentNeuron;
+                double currentNeuronValue = *(allNeuronValues + currentLayerOffset + currentNeuron);
+                *(network->weights + weightIndex) -= learningRate * delta * currentNeuronValue;
+            }
+
+            // Bias gradient is the delta itself because bias is added directly to z
+            *(network->bias + currentBiasLayerOffset + nextNeuron) -= learningRate * delta;
+        }
+    }
+
+    (void)totalLoss;
+    free(hiddenDeltas);
     free(outputDeltas);
+    free(deltas);
 }
 
-void trainModel(NeuralNetwork *network)
+void trainModel(NeuralNetwork *network, double *trainingInputs, double *targetOutputs, size_t numberOfSamples, size_t epochs, double learningRate)
 {
+    // Validate the training data and network pointers before allocating training buffers
+    if (!network || !network->networkShape || !network->weights || !network->bias || !trainingInputs || !targetOutputs)
+    {
+        return;
+    }
+
+    // Read the input/output size from the network shape so the flat training arrays can be indexed
+    size_t numberOfInputElements = *(network->networkShape);
+    size_t numberOfOutputElements = *(network->networkShape + network->numberOfLayers - 1);
+    size_t totalNeurons = countTotalNeurons(network);
+
+    // Reuse one output buffer for every sample during training
+    double *output = malloc(numberOfOutputElements * sizeof(double));
+    if (!output)
+    {
+        printf("Allocation memory for train output fail");
+        return;
+    }
+
+    // Store all activations from the forward pass because backpropagation needs them for gradients
+    double *allNeuronValues = malloc(totalNeurons * sizeof(double));
+    if (!allNeuronValues)
+    {
+        printf("Allocation memory for train allNeuronValues fail");
+        free(output);
+        return;
+    }
+
+    // Repeat the training set many times so weights move gradually toward lower loss
+    for (size_t epoch = 0; epoch < epochs; epoch++)
+    {
+        // Each sample is one full forward pass followed by one backward pass
+        for (size_t sample = 0; sample < numberOfSamples; sample++)
+        {
+            // Move through the flat input and target arrays using the sample index
+            double *sampleInput = trainingInputs + (sample * numberOfInputElements);
+            double *sampleTargetOutput = targetOutputs + (sample * numberOfOutputElements);
+
+            // First calculate the current prediction, then adjust weights using the prediction error
+            forwardPass(network, sampleInput, output, allNeuronValues);
+            backwardPass(network, sampleInput, output, sampleTargetOutput, allNeuronValues, learningRate);
+        }
+    }
+
+    free(output);
+    free(allNeuronValues);
 }
 
 void freeNeuralNetwork(NeuralNetwork *network)
